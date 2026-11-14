@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cliente de teste — Cérebro do jogo</title>
+<style>
+  :root { color-scheme: light dark; --borda: #8885; --ok: #2a8a3a; --erro: #c0392b; --env: #2563eb; }
+  body { font: 14px/1.4 system-ui, sans-serif; margin: 0; padding: 12px; max-width: 1100px; margin-inline: auto; }
+  h1 { font-size: 18px; margin: 0 0 8px; }
+  fieldset { border: 1px solid var(--borda); border-radius: 6px; margin: 0 0 10px; padding: 8px 10px; }
+  legend { font-weight: 600; padding: 0 4px; }
+  label { margin-right: 8px; white-space: nowrap; }
+  input, select, button, textarea { font: inherit; padding: 3px 6px; }
+  input[type=number] { width: 70px; } input[type=text] { width: 120px; }
+  button { cursor: pointer; margin: 2px 2px 2px 0; }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  #hud { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  #barra { width: 160px; height: 12px; background: #8884; border-radius: 6px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  #barra > div { height: 100%; background: #2ecc71; width: 0; transition: width .2s; }
+  #log { height: 320px; overflow: auto; border: 1px solid var(--borda); border-radius: 6px; padding: 6px; font: 12px/1.35 ui-monospace, monospace; white-space: pre-wrap; word-break: break-all; }
+  .env { color: var(--env); } .rec-ok { color: var(--ok); } .rec-erro { color: var(--erro); } .sis { opacity: .7; }
+  textarea { width: 100%; box-sizing: border-box; height: 56px; font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<h1>Cliente de teste do cérebro</h1>
+
+<fieldset>
+  <legend>Conexão</legend>
+  <label>URL <input id="url" type="text" style="width:220px" value="ws://127.0.0.1:8080"></label>
+  <button id="conectar">Conectar</button>
+  <button id="desconectar" disabled>Desconectar</button>
+  <span id="status">desconectado</span>
+</fieldset>
+
+<fieldset>
+  <legend>Situação</legend>
+  <div id="hud">
+    <span>Estado: <b id="h-estado">—</b></span>
+    <span>Herói: <b id="h-nome">—</b></span>
+    <span>Vida: <span id="barra"><div id="b"></div></span> <b id="h-vida">—</b></span>
+    <span>Fragmentos: <b id="h-frag">—</b></span>
+    <span>Menu: <b id="h-menu">—</b></span>
+    <span>Turno: <b id="h-turno">—</b></span>
+    <span>Inimigo: <b id="h-inimigo">—</b></span>
+  </div>
+</fieldset>
+
+<fieldset>
+  <legend>Jogo</legend>
+  <label>Nome <input id="nome" type="text" value="Arthur"></label>
+  <label>Classe <input id="classe" type="text" value="Guerreiro"></label>
+  <label>Vida <input id="vida" type="number" value="100"></label>
+  <button data-msg="novo">Novo jogo</button>
+  <button data-msg='{"tipo":"ESTADO"}'>Estado</button>
+  <button data-msg='{"tipo":"MENU"}'>Voltar ao menu</button>
+  <button data-msg='{"tipo":"PING"}'>Ping</button>
+  <br>
+  <label>Slot <input id="slot" type="number" value="1" min="1" max="3"></label>
+  <button data-msg="salvar">Salvar</button>
+  <button data-msg="carregar">Carregar</button>
+</fieldset>
+
+<fieldset>
+  <legend>Exploração</legend>
+  <label>x <input id="x" type="number" value="0"></label>
+  <label>y <input id="y" type="number" value="0"></label>
+  <label>área <input id="area" type="text" value="FLORESTA_01"></label>
+  <button data-msg="mover">Mover</button>
+  <button id="andar">Andar +16 em x (vários passos)</button>
+  <button data-msg='{"tipo":"AGIR","acao":"ABRIR_BAU"}'>Abrir baú</button>
+  <button data-msg='{"tipo":"HUB_ENTRAR"}'>Entrar no hub</button>
+  <button data-msg='{"tipo":"PURIFICAR"}'>Purificar</button>
+  <button data-msg='{"tipo":"HUB_SAIR"}'>Sair do hub</button>
+</fieldset>
+
+<fieldset>
+  <legend>Batalha</legend>
+  <button data-msg='{"tipo":"BATALHA","comando":"ABRIR_ATAQUES"}'>Abrir ataques</button>
+  <button data-msg='{"tipo":"BATALHA","comando":"ABRIR_MOCHILA"}'>Abrir mochila</button>
+  <button data-msg='{"tipo":"BATALHA","comando":"VOLTAR"}'>Voltar</button>
+  <button data-msg='{"tipo":"BATALHA","comando":"FUGIR"}'>Fugir</button>
+  <button data-msg='{"tipo":"BATALHA","comando":"TURNO_INIMIGO"}'>Turno do inimigo</button>
+  <br>
+  <label>Categoria
+    <select id="cat"><option>FISICO</option><option>MAGICO</option><option>BUFF</option></select></label>
+  <label>Ataque <input id="atq" type="text" value="golpe"></label>
+  <button data-msg="atacar">Atacar</button>
+  <button data-msg="opcoesAtaque">Listar ataques</button>
+  <label>Item <input id="item" type="text" value="pocao_vida"></label>
+  <button data-msg="usarItem">Usar item</button>
+  <button data-msg='{"tipo":"OPCOES_ITENS"}'>Listar itens</button>
+  <button id="auto">Jogar a batalha sozinho</button>
+</fieldset>
+
+<fieldset>
+  <legend>Mensagem livre (JSON)</legend>
+  <textarea id="livre" spellcheck="false">{"tipo":"PING","idPedido":1}</textarea>
+  <button id="enviarLivre">Enviar</button>
+  <button id="limpar">Limpar registro</button>
+</fieldset>
+
+<div id="log" aria-live="polite"></div>
+
+<script>
+"use strict";
+let ws = null;
+const $ = (id) => document.getElementById(id);
+
+function log(classe, texto) {
+  const linha = document.createElement("div");
+  linha.className = classe;
+  linha.textContent = texto;
+  $("log").appendChild(linha);
+  $("log").scrollTop = $("log").scrollHeight;
+}
+
+function ligarBotoes(conectado) {
+  $("conectar").disabled = conectado;
+  $("desconectar").disabled = !conectado;
+  document.querySelectorAll("button[data-msg], #andar, #auto, #enviarLivre").forEach((b) => { b.disabled = !conectado; });
+}
+
+function montar(chave) {
+  const n = (id) => Number($(id).value);
+  const t = (id) => $(id).value;
+  switch (chave) {
+    case "novo": return { tipo: "NOVO_JOGO", nome: t("nome"), classe: t("classe"), vidaMaxima: n("vida") };
+    case "salvar": return { tipo: "SALVAR", slot: n("slot") };
+    case "carregar": return { tipo: "CARREGAR", slot: n("slot") };
+    case "mover": return { tipo: "MOVER", x: n("x"), y: n("y"), areaId: t("area") };
+    case "atacar": return { tipo: "BATALHA", comando: "ATACAR", categoria: t("cat"), id: t("atq") };
+    case "opcoesAtaque": return { tipo: "OPCOES_ATAQUE", categoria: t("cat") };
+    case "usarItem": return { tipo: "BATALHA", comando: "USAR_ITEM", id: t("item") };
+    default: return JSON.parse(chave);
+  }
+}
+
+let pendentes = [];
+function enviar(obj) {
+  return new Promise((resolve) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) { log("rec-erro", "Não conectado."); resolve(null); return; }
+    const texto = JSON.stringify(obj);
+    log("env", "→ " + texto);
+    pendentes.push(resolve);
+    ws.send(texto);
+  });
+}
+
+function mostrar(r) {
+  $("h-estado").textContent = r.estado || "—";
+  if (r.heroi) {
+    $("h-nome").textContent = r.heroi.nome + " (" + r.heroi.classe + ")";
+    $("h-vida").textContent = r.heroi.vida + "/" + r.heroi.vidaMaxima;
+    $("h-frag").textContent = r.heroi.fragmentosColetados + " coletados, " + r.heroi.fragmentosPurificados + " purificados";
+    const pct = r.heroi.vidaMaxima > 0 ? (100 * r.heroi.vida / r.heroi.vidaMaxima) : 0;
+    $("b").style.width = Math.max(0, Math.min(100, pct)) + "%";
+    $("b").style.background = pct < 30 ? "#e74c3c" : "#2ecc71";
+  }
+  if (r.estado !== "BATALHA") { $("h-menu").textContent = "—"; $("h-turno").textContent = "—"; $("h-inimigo").textContent = "—"; }
+  if (r.menu) $("h-menu").textContent = r.menu;
+  if (r.turno) $("h-turno").textContent = r.turno;
+  if (r.inimigo) $("h-inimigo").textContent = r.inimigo.nome + " (nível " + r.inimigo.nivel + ")";
+}
+
+function conectar() {
+  ws = new WebSocket($("url").value);
+  $("status").textContent = "conectando...";
+  ws.onopen = () => { $("status").textContent = "conectado"; log("sis", "Conectado."); ligarBotoes(true); };
+  ws.onclose = (e) => {
+    $("status").textContent = "desconectado"; ligarBotoes(false);
+    log("sis", "Conexão fechada (código " + e.code + (e.reason ? ", " + e.reason : "") + ").");
+    pendentes.forEach((f) => f(null)); pendentes = [];
+  };
+  ws.onerror = () => log("rec-erro", "Erro de conexão. O servidor está rodando em " + $("url").value + "?");
+  ws.onmessage = (ev) => {
+    let r;
+    try { r = JSON.parse(ev.data); } catch (e) { log("rec-erro", "← (não é JSON) " + ev.data); return; }
+    log(r.ok ? "rec-ok" : "rec-erro", "← " + ev.data);
+    (r.eventos || []).forEach((e) => log("sis", "   [" + e.tipo + "] " + e.texto));
+    mostrar(r);
+    const f = pendentes.shift(); if (f) f(r);
+  };
+}
+
+$("conectar").onclick = conectar;
+$("desconectar").onclick = () => ws && ws.close(1000, "tchau");
+$("limpar").onclick = () => { $("log").textContent = ""; };
+$("enviarLivre").onclick = () => {
+  try { enviar(JSON.parse($("livre").value)); } catch (e) { log("rec-erro", "JSON inválido: " + e.message); }
+};
+document.querySelectorAll("button[data-msg]").forEach((b) => {
+  b.onclick = () => { try { enviar(montar(b.dataset.msg)); } catch (e) { log("rec-erro", e.message); } };
+});
+
+$("andar").onclick = async () => {
+  for (let i = 0; i < 40; i++) {
+    $("x").value = Number($("x").value) + 16;
+    const r = await enviar(montar("mover"));
+    if (!r || r.estado === "BATALHA") break;
+  }
+};
+
+$("auto").onclick = async () => {
+  let r = await enviar({ tipo: "ESTADO" });
+  let menu = $("h-menu").textContent, turno = $("h-turno").textContent;
+  for (let i = 0; i < 200 && r && r.estado === "BATALHA"; i++) {
+    let msg;
+    if (turno === "INIMIGO") msg = { tipo: "BATALHA", comando: "TURNO_INIMIGO" };
+    else if (menu === "PRINCIPAL") msg = { tipo: "BATALHA", comando: "ABRIR_ATAQUES" };
+    else msg = { tipo: "BATALHA", comando: "ATACAR", categoria: "FISICO", id: "golpe" };
+    r = await enviar(msg);
+    if (r) { menu = r.menu; turno = r.turno; }
+  }
+};
+
+ligarBotoes(false);
+</script>
+</body>
+</html>

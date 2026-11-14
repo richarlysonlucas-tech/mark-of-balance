@@ -1,4 +1,4 @@
-# Cérebro do jogo (Game State Controller + Save System + orquestração)
+# Cérebro do jogo (estado, save, orquestração e servidor WebSocket)
 
 Tudo desta pasta é do Atila e não altera nenhum arquivo de outros integrantes.
 O núcleo (`src/`) compila e testa sozinho; a ligação com o código dos parceiros fica separada em `integracao/`.
@@ -7,9 +7,13 @@ O núcleo (`src/`) compila e testa sozinho; a ligação com o código dos parcei
 
 ```
 Front-end (Phaser)
-      │  mover(x,y,área) · agir("ABRIR_BAU") · comandoDeBatalha(...) · hub · salvar · carregar
+      │  WebSocket + JSON (veja PROTOCOLO.md)
       ▼
-OrquestradorDoJogo ── devolve RespostaDoJogo (JSON: ok, estado, mensagem, eventos, extras)
+ServidorWebSocket ─► ProtocoloDoJogo (texto JSON ⇄ chamadas)
+      │
+      ▼
+OrquestradorDoJogo ── mover · agir · comandoDeBatalha · hub · salvar · carregar
+      │                devolve RespostaDoJogo (JSON: ok, estado, mensagem, eventos, extras)
       │
       ├── GameStateController  (estado, progresso, regras de transição)   ──► SaveSystem ──► JSON em disco
       ├── FonteDeEncontros     (porta)  ◄── ControladorEncontro (Richarlyson), via JSON
@@ -23,8 +27,13 @@ OrquestradorDoJogo ── devolve RespostaDoJogo (JSON: ok, estado, mensagem, ev
 | `src/util` | `JsonSimples` (JSON sem dependências) |
 | `src/portas` | Interfaces do cérebro: `FonteDeEncontros`, `BatalhaEmCurso`, `FabricaDeBatalha`, `ComandoBatalha`, `EncontroDetectado`, `EncontroViaJson`... |
 | `src/jogo` | `OrquestradorDoJogo`, `RespostaDoJogo` |
-| `src/testes` | `TesteGameState` (24), `TesteOrquestrador` (22), `DemoCerebro` |
-| `integracao/` | Adaptadores reais (`BatalhaViaMotorV2`, `EncontrosDoRicharlyson`), `TesteIntegracao` (7), `DemoIntegrada`, `compilar.sh` |
+| `src/servidor` | `ServidorWebSocket` (RFC 6455, sem bibliotecas), `ProtocoloDoJogo`, `ServidorDeTeste` |
+| `src/servidor/simulacao` | Encontros e batalha SIMULADOS, para testar o front só com esta pasta |
+| `src/testes` | `TesteGameState` (24), `TesteOrquestrador` (22), `TesteProtocolo` (10), `TesteServidorWebSocket` (20), `DemoCerebro` |
+| `cliente-teste/` | `index.html`: página com botões para conversar com o servidor, sem precisar do jogo |
+| `interop/` | `TesteInteropJdk` (3): testa o servidor com o cliente WebSocket do JDK (Java 11+) |
+| `integracao/` | Adaptadores reais (`BatalhaViaMotorV2`, `EncontrosDoRicharlyson`), `ServidorIntegrado`, `TesteIntegracao` (7), `DemoIntegrada`, `compilar.sh` |
+| `PROTOCOLO.md` | Todas as mensagens do WebSocket, com exemplos. É o documento para combinar com o front |
 
 ## Compilar e testar (só o núcleo)
 
@@ -33,7 +42,27 @@ cd cerebro
 javac -encoding UTF-8 -d out $(find src -name '*.java')
 java -cp out testes.TesteGameState
 java -cp out testes.TesteOrquestrador
+java -cp out testes.TesteProtocolo
+java -cp out testes.TesteServidorWebSocket
 java -cp out testes.DemoCerebro
+```
+
+## Rodar o servidor e testar no navegador
+
+```
+cd cerebro
+java -cp out servidor.ServidorDeTeste          # módulos simulados, porta 8080
+```
+
+Depois abra `cliente-teste/index.html` no navegador, clique em **Conectar**, **Novo jogo** e **Andar +16 em x**.
+Para outra porta: `java -cp out servidor.ServidorDeTeste 8081` (e troque a URL na página).
+Os saves ficam na pasta `saves/` (ignorada pelo git).
+
+Teste extra com o cliente WebSocket do JDK (Java 11 ou superior):
+
+```
+javac -encoding UTF-8 -d out $(find src interop -name '*.java')
+java -cp out interop.TesteInteropJdk
 ```
 
 ## Compilar e testar com os módulos reais
@@ -44,7 +73,11 @@ Precisa do código do Richarlyson (`src/`) e do Vitor (`MotorDeBatalhaV2/...`) n
 sh cerebro/integracao/compilar.sh
 ```
 
-O script aceita as pastas dos módulos como argumentos, se estiverem em outro lugar.
+O script aceita as pastas dos módulos como argumentos, se estiverem em outro lugar. Para subir o servidor com os módulos reais:
+
+```
+java -cp "$TMPDIR/ousia-integracao-out" integracao.ServidorIntegrado   # ou /tmp/ousia-integracao-out
+```
 
 ## Regras importantes
 

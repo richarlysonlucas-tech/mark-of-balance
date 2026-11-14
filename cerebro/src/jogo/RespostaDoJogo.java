@@ -45,7 +45,7 @@ public final class RespostaDoJogo {
         return new RespostaDoJogo(false, estado, mensagem, eventos);
     }
 
-    RespostaDoJogo extra(String chave, Object valor) {
+    public RespostaDoJogo extra(String chave, Object valor) {
         extras.put(chave, valor);
         return this;
     }
