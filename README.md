@@ -1,35 +1,60 @@
-# Sistema de Encontros
 
-Projeto Java padrão para detectar a presença do jogador e preparar um encontro aleatório com inimigo.
+<div align="center">
 
-## Gatilhos e proximidade
+# ⚔️ Projeto: Ousia (Action-RPG)
 
-O front-end deve enviar a posição atual a cada atualização. O sistema verifica nesta ordem:
+**Um mergulho épico de fantasia e ação em um universo onde o equilíbrio dita as regras da realidade.**
 
-1. Gatilhos ativados, do maior para o menor nível de prioridade.
-2. Entidade mais próxima dentro do raio de detecção.
-3. Encontro aleatório da área atual.
+[![Gênero: Action-RPG](https://img.shields.io/badge/Gênero-Action--RPG-purple.svg)](#)
+[![Modo: Single-Player](https://img.shields.io/badge/Modo-Single--Player-blue.svg)](#)
+[![Status: Em Desenvolvimento](https://img.shields.io/badge/Status-Em%20Desenvolvimento-success.svg)](#)
 
-Quando houver vários gatilhos ativos, vence o gatilho com maior prioridade. Quando houver várias entidades próximas, vence a que estiver mais perto do jogador.
+</div>
 
-### Tipos de gatilho
+---
 
-`GatilhoArea` é ativado ao entrar em um retângulo definido pelas coordenadas, largura e altura.
+## 📜 Sobre o Jogo
 
-`GatilhoAcao` é ativado quando o front-end informa uma ação, por exemplo `ABRIR_BAU`.
+Desenvolvido como um jogo digital **Single-Player**, este título de **Ação-RPG (Action-RPG)** transporta o jogador para o vasto e místico universo de fantasia de **Ousia**. O jogador embarca em uma jornada intensa para restaurar a ordem em um mundo cuja própria estrutura geográfica e mágica foi fraturada.
 
-### Contrato de proximidade
+---
 
-```java
-controlador.verificarPresenca(jogadorId, posicaoX, posicaoY, areaId, acoesRealizadas);
-```
+## 🎯 Escopo de Alto Nível (Características Principais)
 
-```java
-controlador.verificarAcao(jogadorId, posicaoX, posicaoY, areaId, acaoRealizada);
-```
+Nosso foco de desenvolvimento está estruturado nos seguintes pilares fundamentais:
 
-O resultado continua sendo JSON. Para uma entidade próxima, por exemplo:
+- 🗡️ **Sistema de Combate Dinâmico:** Implementação de estilos de luta distintos e fluidos. O jogador não está preso a um único estilo, podendo desbloquear e alternar entre novas formas de combate ao longo da campanha.
+- 🎒 **Progressão e Inventário:** Um sistema robusto para coletar, equipar e aprimorar itens. A progressão de habilidades está intimamente ligada à **Marca do Equilíbrio** — a representação máxima do equilíbrio universal do jogo.
+- 🗺️ **Mundo Semi-Aberto (Hub-and-Spoke):** O design de níveis (Level Design) é focado em um mapa central (Hub) que se ramifica para **3 Biomas Temáticos** (Terras dos Impérios). Cada região conta com perigos ambientais únicos que refletem a "geografia instável" de Ousia.
+- 👹 **Inimigos e Desafios:**
+  - **Os Corrompidos:** Criaturas básicas com comportamentos e padrões de ataque programados para desafiar o jogador durante a exploração.
+  - **Chefões Épicos:** Batalhas de alto impacto contra os *Líderes das Sombras* ou *Guardiões Corrompidos*, exigindo domínio total do combate.
 
-```json
-{"acao":"INICIAR_BATALHA","jogadorId":"jogador-1","areaId":"FLORESTA_01","mensagem":"Encontro iniciado. O sistema de batalha deve assumir.","origem":"PROXIMIDADE_MONSTRO_1","inimigo":{"id":"LOBISOMEM_01","nome":"Lobisomem","nivel":5}}
+---
+
+## 🔄 O Ciclo da Campanha (Core Loop)
+
+A progressão do jogo foi desenhada para manter o jogador constantemente engajado no seguinte ciclo de gameplay:
+
+> **🧭 Explorar** os biomas instáveis ➔ **⚔️ Combater** os Corrompidos ➔ **💎 Coletar** fragmentos de poder ➔ **⚖️ Purificar** os fragmentos no conselho (Hub) ➔ **🔓 Desbloquear** novas áreas e habilidades.
+
+---
+
+## 👥 Equipe de Desenvolvimento
+
+Este projeto ganha vida graças ao talento e à dedicação da nossa equipe.
+
+| | | |
+| :--- | :--- | :--- |
+| 🛡️ Antony Alexandre | 🛡️ Arthur Vital | 🛡️ Daniel Veiga |
+| 🛡️ Guilherme Nunes | 🛡️ João Carlos Lopes | 🛡️ Jorge Henrique |
+| 🛡️ Mateus José S. | 🛡️ Pedro Lucas Domingos | 🛡️ Richarlyson Lucas |
+| 🛡️ Victor Hugo | 🛡️ Vitor Gabriel De Souza | 🛡️ Walter Rangel S. Neto |
+| 🛡️ Lucas Kemuel | | |
+
+---
+
+<div align="center">
+  <p><i>"Em Ousia, o poder não está apenas na força, mas na capacidade de manter o universo em equilíbrio."</i></p>
+</div>
 ```
