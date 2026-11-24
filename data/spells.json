@@ -1,0 +1,24 @@
+{
+  "fireball": {
+    "id": "fireball",
+    "name": "Esfera Arcana",
+    "manaCost": 10,
+    "cooldown": 0.6,
+    "damage": 25,
+    "speed": 180,
+    "range": 140,
+    "size": 6,
+    "color": "#ff6b35"
+  },
+  "ice_shard": {
+    "id": "ice_shard",
+    "name": "Estilhaço Gélido",
+    "manaCost": 18,
+    "cooldown": 1.4,
+    "damage": 45,
+    "speed": 240,
+    "range": 190,
+    "size": 8,
+    "color": "#4ea8de"
+  }
+}
