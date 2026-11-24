@@ -47,6 +47,21 @@ public class ControladorEncontro {
                 "ENTRADA_INVALIDA", "", "", "jogadorId e areaId são obrigatórios."
             ).paraJson();
         }
+        if (!Double.isFinite(posicaoX) || !Double.isFinite(posicaoY)) {
+            return new RespostaFrontEnd(
+                "ENTRADA_INVALIDA", "", "", "posicaoX e posicaoY devem conter números finitos."
+            ).paraJson();
+        }
+        if (acoesRealizadas == null) {
+            acoesRealizadas = Collections.emptyList();
+        }
+        for (String acao : acoesRealizadas) {
+            if (acao == null || acao.trim().isEmpty()) {
+                return new RespostaFrontEnd(
+                    "ENTRADA_INVALIDA", "", "", "A lista de ações não pode conter valores nulos ou vazios."
+                ).paraJson();
+            }
+        }
 
         Jogador jogador = new Jogador(jogadorId, posicaoX, posicaoY, areaId);
         Encontro encontro = servicoEncontro.verificar(jogador, acoesRealizadas);

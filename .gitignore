@@ -1,4 +1,7 @@
 bin/
+out/
+target/
+build/
 *.class
 
 .vscode/

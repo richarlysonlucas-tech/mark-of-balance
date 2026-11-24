@@ -1,17 +1,30 @@
 package modelo;
 
+import java.util.Objects;
+
 /**
  * Representa um inimigo que pode participar de um encontro.
  */
 public class Inimigo {
-    private String id;
-    private String nome;
-    private int nivel;
+    private final String id;
+    private final String nome;
+    private final int nivel;
 
     public Inimigo(String id, String nome, int nivel) {
-        this.id = id;
-        this.nome = nome;
+        this.id = validarTexto(id, "id");
+        this.nome = validarTexto(nome, "nome");
+        if (nivel <= 0) {
+            throw new IllegalArgumentException("O nível do inimigo deve ser positivo.");
+        }
         this.nivel = nivel;
+    }
+
+    private static String validarTexto(String texto, String campo) {
+        Objects.requireNonNull(texto, "O " + campo + " do inimigo é obrigatório.");
+        if (texto.trim().isEmpty()) {
+            throw new IllegalArgumentException("O " + campo + " do inimigo não pode estar vazio.");
+        }
+        return texto.trim();
     }
 
     public String getId() {
@@ -28,8 +41,14 @@ public class Inimigo {
 
     @Override
     public boolean equals(Object outro) {
-        return outro instanceof Inimigo
-            && id.equals(((Inimigo) outro).id);
+        if (this == outro) {
+            return true;
+        }
+        if (!(outro instanceof Inimigo)) {
+            return false;
+        }
+        Inimigo inimigo = (Inimigo) outro;
+        return id.equals(inimigo.id);
     }
 
     @Override

@@ -10,5 +10,6 @@ public interface Gatilho {
     String getId();
     int getPrioridade();
     boolean foiAtivado(Jogador jogador, List<String> acoesRealizadas);
+    boolean pertenceA(String areaId);
     Inimigo getInimigo();
 }

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Random;
 import java.util.List;
+import java.util.Objects;
 
 import controle.IniciadorDeBatalha;
 import modelo.AreaEncontro;
@@ -18,20 +19,21 @@ import modelo.EntidadeMundo;
  * Contém a regra de encontros e não conhece detalhes de tela ou JSON.
  */
 public class ServicoEncontro {
-    private Map<String, AreaEncontro> areas;
-    private DetectorPresenca detectorPresenca;
-    private Random sorteador;
-    private IniciadorDeBatalha iniciadorDeBatalha;
-    private List<Gatilho> gatilhos;
-    private List<EntidadeMundo> entidades;
+    private final Map<String, AreaEncontro> areas;
+    private final DetectorPresenca detectorPresenca;
+    private final Random sorteador;
+    private final IniciadorDeBatalha iniciadorDeBatalha;
+    private final List<Gatilho> gatilhos;
+    private final List<EntidadeMundo> entidades;
 
     public ServicoEncontro(IniciadorDeBatalha iniciadorDeBatalha) {
         this(new Random(), iniciadorDeBatalha);
     }
 
     public ServicoEncontro(Random sorteador, IniciadorDeBatalha iniciadorDeBatalha) {
-        this.sorteador = sorteador;
-        this.iniciadorDeBatalha = iniciadorDeBatalha;
+        this.sorteador = Objects.requireNonNull(sorteador, "O sorteador é obrigatório.");
+        this.iniciadorDeBatalha = Objects.requireNonNull(iniciadorDeBatalha,
+            "O iniciador de batalha é obrigatório.");
         this.detectorPresenca = new DetectorPresenca();
         this.areas = new HashMap<String, AreaEncontro>();
         this.gatilhos = new ArrayList<Gatilho>();
@@ -39,14 +41,17 @@ public class ServicoEncontro {
     }
 
     public void cadastrarArea(AreaEncontro area) {
+        Objects.requireNonNull(area, "A área é obrigatória.");
         areas.put(area.getId(), area);
     }
 
     public void cadastrarGatilho(Gatilho gatilho) {
+        Objects.requireNonNull(gatilho, "O gatilho é obrigatório.");
         gatilhos.add(gatilho);
     }
 
     public void cadastrarEntidade(EntidadeMundo entidade) {
+        Objects.requireNonNull(entidade, "A entidade é obrigatória.");
         entidades.add(entidade);
     }
 
@@ -59,20 +64,23 @@ public class ServicoEncontro {
     }
 
     public Encontro verificar(Jogador jogador, List<String> acoesRealizadas) {
-        if (acoesRealizadas == null) {
-            acoesRealizadas = new ArrayList<String>();
-        }
-        Gatilho gatilho = encontrarGatilho(jogador, acoesRealizadas);
+        Objects.requireNonNull(jogador, "O jogador é obrigatório.");
+        List<String> acoes = acoesRealizadas == null
+            ? new ArrayList<String>()
+            : acoesRealizadas;
+        validarAcoes(acoes);
+        String areaAtualId = jogador.getAreaAtualId();
+        Gatilho gatilho = encontrarGatilho(jogador, acoes, areaAtualId);
         if (gatilho != null) {
             return iniciar(Encontro.comEncontro(jogador, gatilho.getInimigo(), "GATILHO_" + gatilho.getId()));
         }
 
-        EntidadeMundo entidade = encontrarEntidadeMaisProxima(jogador);
+        EntidadeMundo entidade = encontrarEntidadeMaisProxima(jogador, areaAtualId);
         if (entidade != null) {
             return iniciar(Encontro.comEncontro(jogador, entidade.getInimigo(), "PROXIMIDADE_" + entidade.getId()));
         }
 
-        AreaEncontro area = areas.get(jogador.getAreaAtualId());
+        AreaEncontro area = areas.get(areaAtualId);
         if (area == null || !detectorPresenca.estaNaArea(
                 jogador.getPosicaoX(), jogador.getPosicaoY(), area)) {
             return Encontro.semEncontro(jogador);
@@ -93,10 +101,19 @@ public class ServicoEncontro {
         return iniciar(encontro);
     }
 
-    private Gatilho encontrarGatilho(Jogador jogador, List<String> acoesRealizadas) {
+    private void validarAcoes(List<String> acoesRealizadas) {
+        for (String acao : acoesRealizadas) {
+            if (acao == null || acao.trim().isEmpty()) {
+                throw new IllegalArgumentException("A lista de ações não pode conter valores nulos ou vazios.");
+            }
+        }
+    }
+
+    private Gatilho encontrarGatilho(Jogador jogador, List<String> acoesRealizadas, String areaAtualId) {
         Gatilho escolhido = null;
         for (Gatilho gatilho : gatilhos) {
-            if (gatilho.foiAtivado(jogador, acoesRealizadas)
+            if (gatilho.pertenceA(areaAtualId)
+                    && gatilho.foiAtivado(jogador, acoesRealizadas)
                     && (escolhido == null || gatilho.getPrioridade() > escolhido.getPrioridade())) {
                 escolhido = gatilho;
             }
@@ -104,10 +121,13 @@ public class ServicoEncontro {
         return escolhido;
     }
 
-    private EntidadeMundo encontrarEntidadeMaisProxima(Jogador jogador) {
+    private EntidadeMundo encontrarEntidadeMaisProxima(Jogador jogador, String areaAtualId) {
         EntidadeMundo maisProxima = null;
         double menorDistancia = Double.MAX_VALUE;
         for (EntidadeMundo entidade : entidades) {
+            if (!entidade.pertenceA(areaAtualId)) {
+                continue;
+            }
             double distancia = detectorPresenca.calcularDistancia(jogador, entidade);
             if (distancia <= entidade.getRaioDeteccao() && distancia < menorDistancia) {
                 maisProxima = entidade;

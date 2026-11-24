@@ -53,10 +53,33 @@ public class RespostaFrontEnd {
         if (texto == null) {
             return "";
         }
-        return texto.replace("\\", "\\\\")
-            .replace("\"", "\\\"")
-            .replace("\n", "\\n")
-            .replace("\r", "\\r")
-            .replace("\t", "\\t");
+        StringBuilder escapado = new StringBuilder();
+        for (int i = 0; i < texto.length(); i++) {
+            char caractere = texto.charAt(i);
+            switch (caractere) {
+                case '\\':
+                    escapado.append("\\\\");
+                    break;
+                case '"':
+                    escapado.append("\\\"");
+                    break;
+                case '\n':
+                    escapado.append("\\n");
+                    break;
+                case '\r':
+                    escapado.append("\\r");
+                    break;
+                case '\t':
+                    escapado.append("\\t");
+                    break;
+                default:
+                    if (caractere < 0x20) {
+                        escapado.append(String.format("\\u%04x", (int) caractere));
+                    } else {
+                        escapado.append(caractere);
+                    }
+            }
+        }
+        return escapado.toString();
     }
 }
