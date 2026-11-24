@@ -8,15 +8,15 @@ import java.util.Random;
  */
 public abstract class Inimigo extends Personagem {
 
-    /** A cada melhoria do jogador, os inimigos ficam 12% mais fortes. */
-    public static final double FATOR_ESCALONAMENTO = 1.12;
+    /** A cada melhoria do jogador, os inimigos ficam 5% mais fortes. */
+    public static final double FATOR_ESCALONAMENTO = 1.05;
 
     public Inimigo(String nome, int vidaMaxima, int resistencia, int velocidade) {
         super(nome, vidaMaxima, resistencia, velocidade);
     }
 
     /**
-     * Escalona o inimigo: statusFinal = Math.round(statusBase * 1.12 ^ totalMelhorias).
+     * Escalona o inimigo: statusFinal = Math.round(statusBase * 1.05 ^ totalMelhorias).
      * Afeta vida, resistência, velocidade, dano e estamina. A precisão NÃO muda.
      * Depois de escalonar, o inimigo começa a batalha com vida e estamina cheias.
      */
