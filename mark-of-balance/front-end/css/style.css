@@ -1,0 +1,32 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0d0d12;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
+  font-family: monospace;
+}
+
+#game-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #2a2a3a;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.8);
+}
+
+canvas {
+  /* Escala 3x na tela (960x540) mantendo pixels 100% nítidos */
+  width: 960px;
+  height: 540px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background-color: #1b2632;
+}
