@@ -4,29 +4,61 @@ export class TileMap {
     this.tilesetImage = tilesetImage;
 
     this.tileSize = mapData.tilewidth; // 16
-    this.cols = mapData.width; // 40
-    this.rows = mapData.height; // 40
+    this.cols = mapData.width;
+    this.rows = mapData.height;
 
-    this.pixelWidth = this.cols * this.tileSize; // 640
-    this.pixelHeight = this.rows * this.tileSize; // 640
-    this.tilesetCols = Math.floor(tilesetImage.width / this.tileSize); // 50
+    this.pixelWidth = this.cols * this.tileSize;
+    this.pixelHeight = this.rows * this.tileSize;
+    this.tilesetCols = Math.floor(tilesetImage.width / this.tileSize);
 
-    // Guarda todas as camadas de blocos e os retângulos da camada "Colisoes"
+    // Guarda todas as camadas de blocos, colisões, portais e spawns
     this.tileLayers = [];
     this.collisionBoxes = [];
+    this.portals = [];
+    this.enemySpawns = [];
 
     for (const layer of mapData.layers) {
       if (layer.type === 'tilelayer' && layer.visible) {
         this.tileLayers.push(layer);
-      } else if (layer.type === 'objectgroup' && layer.name === 'Colisoes') {
-        for (const obj of layer.objects) {
-          // Ignora objetos sem largura ou altura (pontos soltos no Tiled)
-          if (obj.width > 0 && obj.height > 0) {
-            this.collisionBoxes.push({
+      } else if (layer.type === 'objectgroup') {
+        const layerName = (layer.name || '').trim();
+        const layerNameLower = layerName.toLowerCase();
+
+        if (layerName === 'Colisoes') {
+          for (const obj of layer.objects) {
+            if (obj.width > 0 && obj.height > 0) {
+              this.collisionBoxes.push({
+                x: obj.x,
+                y: obj.y,
+                width: obj.width,
+                height: obj.height,
+              });
+            }
+          }
+        } else if (layerNameLower.startsWith('portal') || layerNameLower === 'portais') {
+          for (const obj of layer.objects) {
+            const portalName = layerNameLower.startsWith('portal')
+              ? layerNameLower
+              : (obj.name || '').trim().toLowerCase();
+
+            if (portalName.startsWith('portal')) {
+              const propSaida = obj.properties?.find((p) => p.name === 'direcaoSaida');
+              this.portals.push({
+                nome: portalName, // ex: "portal 1", "portal 3", "portal 6"
+                x: obj.x,
+                y: obj.y,
+                width: obj.width || 16,
+                height: obj.height || 16,
+                direcaoSaida: propSaida ? propSaida.value : null,
+              });
+            }
+          }
+        } else if (layerNameLower === 'inimigos' || layerNameLower === 'spawns') {
+          for (const obj of layer.objects) {
+            this.enemySpawns.push({
               x: obj.x,
               y: obj.y,
-              width: obj.width,
-              height: obj.height,
+              name: obj.name || 'Inimigo',
             });
           }
         }
@@ -36,7 +68,7 @@ export class TileMap {
 
   // Checa colisão AABB entre a hitbox do personagem e os retângulos da camada "Colisoes"
   checkCollision(rect) {
-    // 1. Impede sair das bordas do mapa 640x640
+    // 1. Impede sair das bordas do mapa atual
     if (
       rect.x < 0 ||
       rect.y < 0 ||
@@ -82,11 +114,9 @@ export class TileMap {
           const rawGid = data[row * this.cols + col];
           if (rawGid === 0) continue;
 
-          // Verifica se o tile foi espelhado no Tiled
           const flipH = (rawGid & FLIP_HORIZONTAL) !== 0;
           const flipV = (rawGid & FLIP_VERTICAL) !== 0;
 
-          // Remove flags de rotação/espelhamento e ajusta caso tenha usado o tileset duplicado (11001+)
           let cleanGid = rawGid & 0x1fffffff;
           if (cleanGid >= 11001) {
             cleanGid -= 11000;

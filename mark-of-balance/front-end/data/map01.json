@@ -106,6 +106,29 @@
         }, 
         {
          "draworder":"topdown",
+         "id":7,
+         "name":"portal 1",
+         "objects":[
+                {
+                 "height":19.5419847328244,
+                 "id":53,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":48.3406990759341,
+                 "x":273.587786259542,
+                 "y":-1.02852551225392
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":true,
+         "x":0,
+         "y":0
+        }, 
+        {
+         "draworder":"topdown",
          "id":6,
          "name":"Colisoes",
          "objects":[
@@ -541,8 +564,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":7,
- "nextobjectid":53,
+ "nextlayerid":8,
+ "nextobjectid":55,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

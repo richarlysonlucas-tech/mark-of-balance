@@ -1,12 +1,21 @@
 import { StatSheet, Progression } from '../systems/ProgressionSystem.js';
 
 export class Player {
-  constructor(x, y, nome = 'Heroi de Ousia') {
+  constructor(x, y, nome = 'Heroi de Ousia', spriteImage = null) {
     this.x = x;
     this.y = y;
     this.width = 16;
     this.height = 16;
     this.nome = nome;
+    this.sprite = spriteImage;
+
+    // Configuração da sprite sheet 32x48 (2 colunas x 3 linhas de 16x16)
+    this.frameWidth = 16;
+    this.frameHeight = 16;
+    this.frameX = 0;
+    this.maxFrames = 2;
+    this.animTimer = 0;
+    this.animSpeed = 0.16;
 
     this.hitbox = { offsetX: 3, offsetY: 8, width: 10, height: 8 };
 
@@ -40,7 +49,6 @@ export class Player {
     };
   }
 
-  // Mesma fórmula do Entity.java
   takeDamage(danoBruto) {
     if (this.invulnTimer > 0 || this.state === 'DEAD') return 0;
 
@@ -54,7 +62,6 @@ export class Player {
     return danoReal;
   }
 
-  // Mesma fórmula do Player.java
   ganharXp(xp) {
     const novosNiveis = this.progressao.addXp(xp);
     for (let i = 0; i < novosNiveis.length; i++) {
@@ -85,7 +92,6 @@ export class Player {
       this.energia = Math.min(maxEnergia, this.energia + this.mpRegen * deltaTime);
     }
 
-    // Converte Stat.VELOCIDADE (base 10) em pixels/segundo (64px/s no nível 1)
     const moveSpeed = 54 + this.stats.get('VELOCIDADE');
     const axis = input.getMovementAxis();
 
@@ -98,8 +104,16 @@ export class Player {
 
       const nextY = this.y + axis.y * moveSpeed * deltaTime;
       if (!tileMap.checkCollision(this.getHitboxAt(this.x, nextY))) this.y = nextY;
+
+      this.animTimer += deltaTime;
+      if (this.animTimer >= this.animSpeed) {
+        this.animTimer = 0;
+        this.frameX = (this.frameX + 1) % this.maxFrames;
+      }
     } else {
       this.state = 'IDLE';
+      this.frameX = 0;
+      this.animTimer = 0;
     }
   }
 
@@ -117,17 +131,55 @@ export class Player {
     const drawX = Math.round(this.x - camera.x);
     const drawY = Math.round(this.y - camera.y);
 
-    ctx.fillStyle = this.state === 'DEAD' ? '#555555' : '#4ecdc4';
-    ctx.fillRect(drawX, drawY, this.width, this.height);
+    if (this.sprite && this.sprite.complete && this.sprite.naturalWidth > 0) {
+      // Calcula o tamanho real de cada célula com base na imagem carregada (ex: 32x48 -> 16x16)
+      const cols = this.maxFrames; // 2 colunas
+      const rows = 3;              // 3 linhas
+      const cellW = Math.floor(this.sprite.naturalWidth / cols);
+      const cellH = Math.floor(this.sprite.naturalHeight / rows);
 
-    ctx.fillStyle = '#ffe66d';
-    if (this.direction === 'down') ctx.fillRect(drawX + 6, drawY + 12, 4, 4);
-    if (this.direction === 'up') ctx.fillRect(drawX + 6, drawY, 4, 4);
-    if (this.direction === 'left') ctx.fillRect(drawX, drawY + 6, 4, 4);
-    if (this.direction === 'right') ctx.fillRect(drawX + 12, drawY + 6, 4, 4);
+      // Linha 0: Frente (down) | Linha 1: Costas (up) | Linha 2: Lado (left/right)
+      let frameY = 0;
+      if (this.direction === 'up') frameY = 1;
+      else if (this.direction === 'right' || this.direction === 'left') frameY = 2;
+
+      const flipHorizontal = this.direction === 'left';
+
+      ctx.save();
+      if (flipHorizontal) {
+        ctx.translate(drawX + cellW, drawY);
+        ctx.scale(-1, 1);
+        ctx.drawImage(
+          this.sprite,
+          this.frameX * cellW,
+          frameY * cellH,
+          cellW,
+          cellH,
+          0,
+          0,
+          cellW,
+          cellH
+        );
+      } else {
+        ctx.drawImage(
+          this.sprite,
+          this.frameX * cellW,
+          frameY * cellH,
+          cellW,
+          cellH,
+          drawX,
+          drawY,
+          cellW,
+          cellH
+        );
+      }
+      ctx.restore();
+    } else {
+      ctx.fillStyle = this.state === 'DEAD' ? '#555555' : '#4ecdc4';
+      ctx.fillRect(drawX, drawY, this.width, this.height);
+    }
   }
 
-  // Serializa exatamente no formato que o Back-end Java espera
   toDTO() {
     return {
       nome: this.nome,
@@ -177,6 +229,7 @@ export class Player {
     this.vida = this.stats.getInt('VIDA_MAXIMA');
     this.energia = this.stats.getInt('ENERGIA_MAXIMA');
     this.state = 'IDLE';
+    this.frameX = 0;
     this.invulnTimer = 0;
   }
 }
